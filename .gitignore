@@ -1,2 +1,6 @@
-.idea
-test/zm
+zm_password.txt
+nqq.xml
+secrets*
+ssl*/
+build_[0-9]*
+.env

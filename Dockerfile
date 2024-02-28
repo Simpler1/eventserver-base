@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:experimental
+# syntax=docker/dockerfile:1
 ARG ZM_VERSION=main
 ARG ES_VERSION=master
 
@@ -60,34 +60,57 @@ RUN set -x \
 
 RUN --mount=type=bind,target=/tmp/eventserver,source=/eventserverdownloader,from=eventserverdownloader,rw \
     set -x \
+    && apt update \
+    && apt install -y \
+        python3 \
+        python3-pip \
+        vim \
+    && rm /usr/lib/python3.*/EXTERNALLY-MANAGED \
+    && pip install pyzm \
+    && pip install opencv-python \
     && cd /tmp/eventserver \
-    && mkdir -p /zoneminder/defaultconfiges \
-    && TARGET_CONFIG=/zoneminder/defaultconfiges \
-        MAKE_CONFIG_BACKUP='' \
+    && mkdir -p /etc/zm \
+#    && TARGET_CONFIG=/zoneminder/defaultconfiges \
+    && MAKE_CONFIG_BACKUP='' \
         ./install.sh \
             --install-es \
-            --no-install-hook \
+            --install-hook \
             --install-config \
             --no-interactive \
             --no-pysudo \
-            --no-hook-config-upgrade \
+            --hook-config-upgrade \
     && mkdir -p /zoneminder/estools \
     && cp ./tools/* /zoneminder/estools
 
-# Fix default es config
 # https://stackoverflow.com/a/16987794
+# Set variables in initial secrets.ini
 RUN set -x \
-    && sed -i "/^\[general\]$/,/^\[/ s|^secrets.*=.*|secrets=/config/secrets.ini|" /zoneminder/defaultconfiges/zmeventnotification.ini \
-    && sed -i "/^\[fcm\]$/,/^\[/ s|^token_file.*=.*|token_file=/config/tokens.txt|" /zoneminder/defaultconfiges/zmeventnotification.ini \
-    && sed -i "/^\[customize\]$/,/^\[/ s|^console_logs.*=.*|console_logs=yes|" /zoneminder/defaultconfiges/zmeventnotification.ini \
-    && sed -i "/^\[customize\]$/,/^\[/ s|^use_hooks.*=.*|use_hooks=no|" /zoneminder/defaultconfiges/zmeventnotification.ini \
-    && sed -i "/^\[network\]$/,/^\[/ s|^.*address.*=.*|address=0.0.0.0|" /zoneminder/defaultconfiges/zmeventnotification.ini \
-    && sed -i "/^\[auth\]$/,/^\[/ s|^enable.*=.*|enable=no|" /zoneminder/defaultconfiges/zmeventnotification.ini
+   && sed -i "/^\[secrets\]$/,/^\[/ s|^ES_CERT_FILE.*=.*|ES_CERT_FILE=/config/ssl/fullchain.pem|" /etc/zm/secrets.ini \
+   && sed -i "/^\[secrets\]$/,/^\[/ s|^ES_KEY_FILE.*=.*|ES_KEY_FILE=/config/ssl/privkey.pem|" /etc/zm/secrets.ini
 
-# Fix default es secrets
+# Set variables in initial zmeventnotification.ini
 RUN set -x \
-    && sed -i "/^\[secrets\]$/,/^\[/ s|^ES_CERT_FILE.*=.*|ES_CERT_FILE=/config/ssl/cert.cer|" /zoneminder/defaultconfiges/secrets.ini \
-    && sed -i "/^\[secrets\]$/,/^\[/ s|^ES_KEY_FILE.*=.*|ES_KEY_FILE=/config/ssl/key.pem|" /zoneminder/defaultconfiges/secrets.ini
+    && sed -i "/^\[general\]$/,/^\[/ s|^secrets.*=.*|secrets=/config/secrets.ini|" /etc/zm/zmeventnotification.ini \
+    && sed -i "/^\[fcm\]$/,/^\[/ s|^token_file.*=.*|token_file=/config/tokens.txt|" /etc/zm/zmeventnotification.ini \
+    && sed -i "/^\[customize\]$/,/^\[/ s|^console_logs.*=.*|console_logs=yes|" /etc/zm/zmeventnotification.ini \
+    && sed -i "/^\[customize\]$/,/^\[/ s|^use_hooks.*=.*|use_hooks=yes|" /etc/zm/zmeventnotification.ini \
+    && sed -i "/^\[network\]$/,/^\[/ s|^.*address.*=.*|address=192.168.1.20|" /etc/zm/zmeventnotification.ini \
+    && sed -i "/^\[auth\]$/,/^\[/ s|^enable.*=.*|enable=yes|" /etc/zm/zmeventnotification.ini
+
+# Set variables in initial objectconfig.ini
+RUN set -x \
+    && sed -i "/^\[general\]$/,/^\[/ s|^secrets.*=.*|secrets=/config/secrets|" /etc/zm/objectconfig.ini
+
+# Copy custom configuration files
+COPY ./config/zmeventnotification.ini /etc/zm/
+COPY ./config/objectconfig.ini /etc/zm/
+COPY ./config/zm.conf /etc/zm/
+COPY ./config/conf.d /etc/zm/conf.d/
+
+# This actually sets the user and group to 911, but it seems to work.
+# RUN set -x \
+#     && chown -R www-data:www-data /etc/zm \
+#     && chown -R www-data:www-data /var/lib/zmeventnotification
 
 # Copy rootfs
 COPY --from=rootfs-converter /rootfs /
@@ -100,7 +123,7 @@ ENV \
     USE_SECURE_RANDOM_ORG=1
 
 LABEL \
-    com.github.alexyao2015.es_version=${ES_VERSION}
+    com.github.simpler1.es_version=${ES_VERSION}
 
 EXPOSE 443/tcp
 EXPOSE 9000/tcp

@@ -1,45 +1,51 @@
-version: '3'
-
 services:
   db:
     container_name: db
-    image: mariadb
+    image: mariadb:11.1
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", 'ln -s /usr/bin/mariadb /usr/bin/mysql && mysql -umysqluser -p"this is the sql user pw" zm --execute="SELECT count(Id) > 0 FROM Users;" --skip-column-names -B']
+      interval: 3s
+      timeout: 3s
+      retries: 4
     networks:
       - zoneminder
     volumes:
-      - ./zm/db:/var/lib/mysql
+      - /ethereum/security/db:/var/lib/mysql
     environment:
       - MYSQL_DATABASE=zm
     env_file:
-      - ../.env
+      - ./.env
 
   zoneminder:
     container_name: zoneminder
-    image: ghcr.io/zoneminder-containers/eventserver-base:latest
+    image: zm_eventserver:46
     restart: always
     stop_grace_period: 45s
     depends_on:
       - db
     ports:
-      - 80:80
-      - 443:443
+      - 1080:80
+      - 444:443
       - 9000:9000
     networks:
       - zoneminder
     volumes:
-      - ./zm/data:/data
-      - ./zm/config:/config
-      - ./zm/log:/log
+      - /ethereum/security/data:/data
+      - /ethereum/security/log:/log
+      - ./config:/config
+      - ./data/nginx:/etc/nginx/conf.d
+      - ./sounds:/var/www/html/sounds
       - type: tmpfs
         target: /dev/shm
         tmpfs:
           size: 1000000000
+    devices:
+      # VAAPI Devices
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card0:/dev/dri/card0
     env_file:
-      - ../.env
-#    environment:
-#      - ZM_SERVER_HOST=zoneminder1
-
+      - ./.env
 
 networks:
   zoneminder:
