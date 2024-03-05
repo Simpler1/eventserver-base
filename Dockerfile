@@ -64,7 +64,7 @@ RUN --mount=type=bind,target=/tmp/eventserver,source=/eventserverdownloader,from
     && apt install -y \
         python3 \
         python3-pip \
-        vim \
+        vim-tiny \
     && rm /usr/lib/python3.*/EXTERNALLY-MANAGED \
     && pip install pyzm \
     && pip install opencv-python \

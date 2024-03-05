@@ -10,7 +10,11 @@ services:
       retries: 4
     networks:
       - zoneminder
+    ports:
+      - 3307:3306
     volumes:
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
       - /ethereum/security/db:/var/lib/mysql
     environment:
       - MYSQL_DATABASE=zm
@@ -19,9 +23,15 @@ services:
 
   zoneminder:
     container_name: zoneminder
-    image: zm_eventserver:46
+    image: zm_eventserver:49
     restart: always
     stop_grace_period: 45s
+    healthcheck:
+      test: ["CMD-SHELL", "service nginx status"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     depends_on:
       - db
     ports:
@@ -31,6 +41,8 @@ services:
     networks:
       - zoneminder
     volumes:
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
       - /ethereum/security/data:/data
       - /ethereum/security/log:/log
       - ./config:/config
