@@ -41,6 +41,7 @@ RUN set -x \
 #                                                                   #
 #####################################################################
 FROM ghcr.io/zoneminder-containers/zoneminder-base:${ZM_VERSION}
+#FROM zm:1
 ARG ES_VERSION
 
 RUN set -x \

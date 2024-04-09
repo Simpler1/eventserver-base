@@ -23,14 +23,14 @@ services:
 
   zoneminder:
     container_name: zoneminder
-    image: zm_eventserver:49
+    image: zm_eventserver:68
     restart: always
     stop_grace_period: 45s
     healthcheck:
       test: ["CMD-SHELL", "service nginx status"]
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 9
       start_period: 10s
     depends_on:
       - db
