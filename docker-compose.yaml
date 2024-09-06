@@ -23,7 +23,9 @@ services:
 
   zoneminder:
     container_name: zoneminder
-    image: zm_eventserver:68
+    # image: ghcr.io/zoneminder-containers/eventserver-base:latest
+    # image: zm_eventserver:e45
+    image: zm_eventserver:152
     restart: always
     stop_grace_period: 45s
     healthcheck:

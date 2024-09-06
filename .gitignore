@@ -2,5 +2,5 @@ zm_password.txt
 nqq.xml
 secrets*
 ssl*/
-build_[0-9]*
+build_*.log
 .env

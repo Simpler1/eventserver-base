@@ -22,7 +22,7 @@ RUN set -x \
 # Alleviates issues when git uses CRLF on Windows                   #
 #                                                                   #
 #####################################################################
-FROM alpine:latest as rootfs-converter
+FROM alpine:latest AS rootfs-converter
 WORKDIR /rootfs
 
 RUN set -x \
@@ -40,8 +40,9 @@ RUN set -x \
 # Apply changes to default ES config                                #
 #                                                                   #
 #####################################################################
-FROM ghcr.io/zoneminder-containers/zoneminder-base:${ZM_VERSION}
-#FROM zm:1
+# FROM ghcr.io/zoneminder-containers/zoneminder-base:${ZM_VERSION}
+# FROM zm:e45
+FROM zm:152
 ARG ES_VERSION
 
 RUN set -x \
